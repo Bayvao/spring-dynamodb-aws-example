@@ -16,14 +16,15 @@ public class MovieDetails {
 
     private String id;
     private String title;
-    private LocalDate year;
+    private String year;
     private String genre;
     private String country;
-    private Integer duration;
+    private String duration;
     private String language;
 
 
     @DynamoDbPartitionKey
+    @DynamoDbAttribute("id")
     public String getId() {
         return id;
     }
@@ -45,11 +46,11 @@ public class MovieDetails {
 
 
     @DynamoDbAttribute("release_year")
-    public LocalDate getYear() {
+    public String getYear() {
         return year;
     }
 
-    public void setYear(LocalDate year) {
+    public void setYear(String year) {
         this.year = year;
     }
 
@@ -76,11 +77,11 @@ public class MovieDetails {
 
 
     @DynamoDbAttribute("duration")
-    public Integer getDuration() {
+    public String getDuration() {
         return duration;
     }
 
-    public void setDuration(Integer duration) {
+    public void setDuration(String duration) {
         this.duration = duration;
     }
 
