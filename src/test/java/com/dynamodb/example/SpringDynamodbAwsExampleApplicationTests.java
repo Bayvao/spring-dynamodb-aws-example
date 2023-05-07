@@ -1,6 +1,7 @@
 package com.dynamodb.example;
 
 import com.dynamodb.example.entity.MovieDetails;
+import com.dynamodb.example.service.DynamoDbOperationDemo;
 import io.awspring.cloud.dynamodb.DynamoDbTemplate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,14 +29,18 @@ import java.util.*;
 
 @SpringBootTest
 class SpringDynamodbAwsExampleApplicationTests {
+//
+//    private static DynamoDbTable<MovieDetails> dynamoDbTable;
+//    private static DynamoDbTemplate dynamoDbTemplate;
 
-    private static DynamoDbTable<MovieDetails> dynamoDbTable;
-    private static DynamoDbTemplate dynamoDbTemplate;
+    @Autowired
+    private DynamoDbOperationDemo operationDemo;
 
     @Test
     void contextLoads() {
     }
 
+    /*
     @BeforeAll
     public static void createTable() {
         DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
@@ -53,97 +58,57 @@ class SpringDynamodbAwsExampleApplicationTests {
 
     }
 
+     */
+
     @Test
-    @MethodSource("argumentSource")
     void testCrud() {
         MovieDetails movieDetails = new MovieDetails("MOV001", "Avengers", null, "Action", "US", "175", "English");
-        MovieDetails savedMovie =  dynamoDbTemplate.save(movieDetails);
+        MovieDetails savedMovie =  operationDemo.saveData(movieDetails);
 
         Assertions.assertEquals(movieDetails.getId(), savedMovie.getId());
 
         savedMovie.setTitle("Avengers Endgame");
-        MovieDetails updatedMovie = dynamoDbTemplate.update(movieDetails);
+        MovieDetails updatedMovie = operationDemo.updateData(movieDetails);
 
         Assertions.assertEquals(movieDetails.getId(), updatedMovie.getId());
         Assertions.assertEquals(savedMovie.getTitle(), updatedMovie.getTitle());
 
-        dynamoDbTemplate.delete(updatedMovie);
+        operationDemo.deleteByObject(updatedMovie);
 
-        MovieDetails fetchedDetails = dynamoDbTemplate.load(
-                Key.builder().partitionValue(movieDetails.getId()).build(),
-                MovieDetails.class);
+        MovieDetails fetchedDetails = operationDemo.findById(movieDetails.getId());
 
         Assertions.assertNull(fetchedDetails);
     }
 
     @Test
-    @MethodSource("argumentSource")
     void testScan() throws InterruptedException {
 
         MovieDetails actionMovie = new MovieDetails("MOV001", "Avengers", null,
                 "Action", "US", "175", "English");
-        dynamoDbTemplate.save(actionMovie);
+        operationDemo.saveData(actionMovie);
 
         MovieDetails ThrillerMovie = new MovieDetails("MOV002", "James Bond", null,
                 "Thriller", "US", "167", "English");
-        dynamoDbTemplate.save(ThrillerMovie);
+        operationDemo.saveData(ThrillerMovie);
 
 
-        PageIterable<MovieDetails> fetchedDataList = scanDataByGenre("Thriller");
+        PageIterable<MovieDetails> fetchedDataList = operationDemo.scanDataByGenre("Thriller");
         Long countResult = fetchedDataList.stream().count();
 
         Assertions.assertEquals(1, countResult);
 
-        PageIterable<MovieDetails> fetchedActionDataList = scanDataByGenre("Action");
+        PageIterable<MovieDetails> fetchedActionDataList = operationDemo.scanDataByGenre("Action");
         Long countActionResult = fetchedActionDataList.stream().count();
 
         Assertions.assertEquals(1, countActionResult);
 
-        cleanUp(dynamoDbTable, actionMovie.getId());
-        dynamoDbTemplate.delete(ThrillerMovie);
+       // cleanUp(dynamoDbTable, actionMovie.getId());
+        operationDemo.deleteByObject(actionMovie);
+        operationDemo.deleteByObject(ThrillerMovie);
 
     }
 
-    private PageIterable<MovieDetails> scanDataByGenre(String genre) {
-        Map<String, AttributeValue> expressionValues = new HashMap<>();
-        expressionValues.put(":val1", AttributeValue.fromS(genre));
-
-        Expression filterExpression = Expression.builder()
-                .expression("genre = :val1")
-                .expressionValues(expressionValues)
-                .build();
-
-        ScanEnhancedRequest scanEnhancedRequest = ScanEnhancedRequest.builder()
-                .filterExpression(filterExpression).build();
-
-        return dynamoDbTable.scan(scanEnhancedRequest);
-    }
-
-    public PageIterable<MovieDetails> queryData(String partitionKey,  String genre) {
-
-        Map<String, AttributeValue> expressionValues = new HashMap<>();
-        expressionValues.put(":value", AttributeValue.fromS(genre));
-
-        Expression filterExpression = Expression.builder()
-                .expression("genre = :val1")
-                .expressionValues(expressionValues)
-                .build();
-
-        QueryConditional queryConditional = QueryConditional
-                .keyEqualTo(
-                        Key.builder()
-                                .partitionValue(partitionKey)
-                                .build());
-
-        QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
-                .queryConditional(queryConditional)
-                .filterExpression(filterExpression)
-                .build();
-
-
-        return dynamoDbTemplate.query(queryRequest,MovieDetails.class);
-    }
-
+/*
     private static void describeAndCreateTable(DynamoDbClient dynamoDbClient, @Nullable String tablePrefix) {
         ArrayList<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(AttributeDefinition.builder().attributeName("id").attributeType("S").build());
@@ -180,5 +145,5 @@ class SpringDynamodbAwsExampleApplicationTests {
     private static java.util.stream.Stream<Arguments> argumentSource() {
         return java.util.stream.Stream.of(Arguments.of(dynamoDbTable, dynamoDbTemplate));
     }
-
+*/
 }
